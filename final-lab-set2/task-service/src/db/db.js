@@ -5,19 +5,16 @@ import { fileURLToPath } from "url";
 
 const { Pool } = pkg;
 
-// จำเป็นสำหรับ __dirname ใน ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const pool = new Pool({
-  host: process.env.DB_HOST || "task-db",
-  port: 5432,
-  database: process.env.DB_NAME || "task_db",
-  user: process.env.DB_USER || "task_user",
-  password: process.env.DB_PASSWORD || "task_secret",
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-// ใช้สร้าง table ตอน container start
 async function initDB() {
   try {
     const sql = fs.readFileSync(
