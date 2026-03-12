@@ -44,6 +44,67 @@ async function logEvent({
 }
 
 // ─────────────────────────────────────────────
+// POST /api/auth/register — สมัครสมาชิกใหม่
+// ─────────────────────────────────────────────
+
+router.post("/register", async (req, res) => {
+  const { username, email, password } = req.body;
+
+  if (!email || !password || !username) {
+    return res.status(400).json({
+      error: "กรุณากรอก username, email และ password",
+    });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({
+      error: "Password ต้องมีอย่างน้อย 6 ตัวอักษร",
+    });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const result = await pool.query(
+      `INSERT INTO users (username, email, password_hash, role)
+       VALUES ($1,$2,$3,'user')
+       RETURNING id, username, email, role`,
+      [username, email.toLowerCase(), passwordHash]
+    );
+
+    const user = result.rows[0];
+
+    const token = generateToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      username: user.username,
+    });
+
+    res.status(201).json({
+      message: "สมัครสมาชิกสำเร็จ",
+      token,
+      user,
+    });
+
+  } catch (err) {
+
+    if (err.code === "23505") {
+      return res.status(409).json({
+        error: "Email นี้ถูกใช้แล้ว",
+      });
+    }
+
+    console.error("[AUTH] Register error:", err.message);
+
+    res.status(500).json({
+      error: "Server error",
+    });
+  }
+});
+
+
+// ─────────────────────────────────────────────
 // POST /api/auth/login
 // ใช้ Seed Users จาก DB เท่านั้น
 // ─────────────────────────────────────────────
