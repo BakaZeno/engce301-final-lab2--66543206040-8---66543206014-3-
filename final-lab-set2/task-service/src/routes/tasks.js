@@ -34,22 +34,21 @@ router.get("/", async (req, res) => {
 
     if (req.user.role === "admin") {
       result = await pool.query(`
-        SELECT t.*, u.username FROM tasks t
-        JOIN users u ON t.user_id = u.id
-        ORDER BY t.created_at DESC
+        SELECT * FROM tasks
+        ORDER BY created_at DESC
       `);
     } else {
       result = await pool.query(`
-        SELECT t.*, u.username FROM tasks t
-        JOIN users u ON t.user_id = u.id
-        WHERE t.user_id = $1
-        ORDER BY t.created_at DESC
+        SELECT * FROM tasks
+        WHERE owner_id = $1
+        ORDER BY created_at DESC
       `, [req.user.sub]);
     }
 
     res.json({ tasks: result.rows, count: result.rowCount });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -64,9 +63,9 @@ router.post("/", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO tasks (user_id, title, description, status, priority)
-       VALUES ($1,$2,$3,$4,$5)
-       RETURNING *`,
+      `INSERT INTO tasks (owner_id, title, description, status, priority)
+      VALUES ($1,$2,$3,$4,$5)
+      RETURNING *`,
       [req.user.sub, title, description, status, priority]
     );
 
@@ -101,7 +100,7 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ error: "Task not found" });
     }
 
-    if (check.rows[0].user_id !== req.user.sub && req.user.role !== "admin") {
+    if (check.rows[0].owner_id !== req.user.sub && req.user.role !== "admin") {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -137,7 +136,7 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ error: "Task not found" });
     }
 
-    if (check.rows[0].user_id !== req.user.sub && req.user.role !== "admin") {
+    if (check.rows[0].owner_id !== req.user.sub && req.user.role !== "admin") {
       return res.status(403).json({ error: "Forbidden" });
     }
 
