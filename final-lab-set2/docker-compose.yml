@@ -1,4 +1,32 @@
 services:
+  # ตัวอย่าง services ใน docker-compose.yml (local test)
+  auth-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./auth-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  task-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./task-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  user-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./user-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+  # ... auth-service, task-service, user-service
 
   # ── PostgreSQL ─────────────────────────────────────────────────────
   postgres:
